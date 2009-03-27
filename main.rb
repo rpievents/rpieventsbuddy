@@ -1,4 +1,7 @@
-
+#Chris Brown
+#Rob Margolies
+#Pete
+#Eric
 #!/usr/bin/ruby
 require 'rubygems'
 require 'net/toc'
