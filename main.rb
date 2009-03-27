@@ -2,6 +2,7 @@
 #Rob Margolies
 #Pete
 #Eric
+#Version 1.0, thanks for reading!
 #!/usr/bin/ruby
 require 'rubygems'
 require 'net/toc'
