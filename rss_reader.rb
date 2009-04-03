@@ -1,5 +1,3 @@
-#RPI Events Buddy
-
 require 'rss/1.0'
 require 'rss/2.0'
 require 'open-uri'
@@ -32,8 +30,10 @@ events.each do |s|
   events_string = events_string + s + ' '
 end
 
+puts events_string
+
 events_array = []
-events_string[/<title>(.+?)<item>/] = "" #get rid of preliminary xml
+events_string[/<title>(.+?)<item>/] = ""# get rid of preliminary xml
 while events_string.match(/<item>(.+?)<\/item>/)
   #parse title and date
   title = events_string[/<title>(.+?)<\/title>/]
@@ -53,8 +53,26 @@ while events_string.match(/<item>(.+?)<\/item>/)
   events_string[/<description>(.+?)<\/description>/] = ""
   description[/<description>/] = ''
   description[/<\/description>/] = ''
+  #puts description
+
+  #parse time
+  stime = description[/20\d\d (.+?) [:A,P:]M/]
+  stime.gsub!(/20\d\d /,"")
+  etime = description[/- (.+?) [:A,P:]M/]
+  etime.gsub!(/- /,"")
+
+  #parse location
+  location = description[/\wM (.+?) \wM (.+?)\./]
+  location.gsub!(/\wM (.+?) \wM/,"")
+  
+
   #add to array
   temp = Event.new(title,date,0,description,link)
   events_array.push(temp)
+  events_string[/<item>(.+?)<\/item>/] = ""
+end
+
+events_array.each do |s|
+ #puts s.Title
 end
 
