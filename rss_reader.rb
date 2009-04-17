@@ -3,14 +3,14 @@ require 'rubygems'
 require 'rss/1.0'
 require 'rss/2.0'
 require 'open-uri'
-#require 'dbi'
+require 'dbi'
 
 #************************
 #* CONNECTS TO POSTGRES *
 #************************
-#puts "\nConnecting to Postgres..."
-#dbh = DBI.connect('DBI:Pg:database=test;host=localhost', 'postgres', 'tennis')
-#puts "Connection successful.\n"
+puts "\nConnecting to Postgres..."
+dbh = DBI.connect('DBI:Pg:database=test;host=localhost', 'postgres', 'tennis')
+puts "Connection successful.\n"
 #************************
 
 class Event
@@ -62,6 +62,7 @@ events_string = ""
 events.each do |s|
   events_string = events_string + s + ' '
 end
+events_string.gsub!(/'/,"")
 
 puts events_string
 
@@ -111,17 +112,7 @@ while events_string.match(/<item>(.+?)<\/item>/)
 end
 
 events_array.each do |s|
-  puts "title ", s.Title
-  puts "Location ", s.Location
-  puts "Start ", s.Start
-  puts "End ", s.End
-  puts "Date",s.Date
-  puts "Host",s.Host
-  puts "contact", s.Contact
-  puts "website",s.Website
-  puts "Description",s.Description
-  puts "creator",s.Creator
-  puts " "
-#	query = dbh.prepare("INSERT INTO events values (\'#{s.Title}\', \'#{s.Location}\', \'#{s.Start}\', \'#{s.End}\', \'#{s.Date}\', \'#{s.Host}\', \'#{s.Contact}\', \'#{s.Website}\', \'#{s.Description}\', \'#{s.Creator}\');")
-#	query.execute()
+	query = dbh.prepare("INSERT INTO events values (\'#{s.Title}\', \'#{s.Location}\', \'#{s.Start}\', \'#{s.End}\', \'#{s.Date}\', \'#{s.Host}\', \'#{s.Contact}\', \'#{s.Website}\', \'#{s.Description}\', \'#{s.Creator}\');")
+	query.execute()
 end
+
