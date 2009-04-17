@@ -3,4 +3,8 @@ Super fun git GUI testing
 - EDIT CHANGES
  -Well here we go again
 
+<<<<<<< HEAD:README
 change somethign a the bottom of the file
+=======
+Not much to read...
+>>>>>>> 4242e354a3cb1006d6c692a1dfb86445085547a5:README
