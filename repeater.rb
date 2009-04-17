@@ -26,13 +26,14 @@ end
 #********
 people = Hash.new
 events = Hash.new
+$column_names = ['title','location','start_time','end_time','date','contact','host','website','description','creator']
 #********
 
 #*******************
 #* CONNECTS TO AIM *
 #*******************
 puts "Connecting to AIM server..."
-client = Net::TOC.new("TobOfWaffles","tennis")
+client = Net::TOC.new("tobofwaffles","tennis")
 client.connect
 puts "Connected to AIM server.\n"
 #*******************
@@ -41,9 +42,69 @@ puts "Connected to AIM server.\n"
 #* CONNECTS TO POSTGRES *
 #************************
 puts "\nConnecting to Postgres..."
-dbh = DBI.connect('DBI:Pg:database=test;host=localhost', 'postgres', 'tennis')
+$dbh = DBI.connect('DBI:Pg:database=test;host=localhost', 'postgres', 'tennis')
 puts "Connection successful.\n"
 #************************
+
+#*****************
+#* PARSE MESSAGE *
+#*****************
+def msg_parse(msg)
+	element_array = []
+	msg += ' '
+	x=0
+	while(msg.match(/\S+\s/))
+		element_array[x] = msg[/\S+\s/]
+		msg[/\S+\s/] = ''
+		element_array[x].gsub!(/\s/,'')
+		element_array[x].gsub!(/_/,' ')#Allows for multiword elements using _
+		x=x+1
+	end
+	element_array
+end
+#*****************
+
+#*******************************
+#* PRIORITY SEARCHING FUNCTION *
+#*******************************
+def event_search(element_array)
+	id_hash = {}
+	
+	element_array.each do |element|
+		$column_names.each do |column|
+			query = $dbh.prepare("SELECT e_id FROM events WHERE #{column} ILIKE \'%#{element}%\';")
+			query.execute()
+			while row = query.fetch() do
+				id_hash.merge!({ row[0] => 0}) unless id_hash.include?(row[0])
+				id_hash[row[0]] += 1
+			end
+		end
+	end
+	
+	
+	#Gets top 3 results
+	t = 0
+	answer = []
+	id_hash.sort{|a,b| b[1] <=> a[1]}.each {|elem|
+		#  puts "#{elem[1]}, #{elem[0]}"
+		if (t < 3 and elem[1] != 0) then
+			answer [t] = elem[0]
+		end
+		t += 1
+	}
+	
+	result = ""
+	answer.each do |event_num|
+		query = $dbh.prepare("SELECT e_id, title, location, date FROM events WHERE e_id = #{event_num};")
+		query.execute()
+		
+		row = query.fetch()
+		result += "<b>#{row[0]}.</b> <i>#{row[1]}</i> #{row[2]} #{row[3]}\n"
+	end
+	
+	result
+end
+#*******************************
 
 #*****************************
 #* ACTION ON MESSAGE RECEIVE *
@@ -63,6 +124,7 @@ client.on_im do |message,buddy|
 	# 0 = new conversation
 	# 1 = menu
 	# 2 = searching events
+	# "2a" = events searched
 	# 3 = adding event
 	# "3a" = adding event title
 	# "3b" = adding start time
@@ -77,12 +139,60 @@ client.on_im do |message,buddy|
 		
 	elsif (m =/menu/.match(message))
 		buddy.send_im "1.Search Events.\n2.Create New Event.\nType \"menu\" at any time to see this menu again."
+		people[buddy] = 1
 		
+	#Searching Events	
+	
 	elsif people[buddy] == 1 and (m =/1/.match(message))
-		buddy.send_im "Searching events."
-		puts "To #{buddy.screen_name}:Searching events."
+		buddy.send_im "Enter search terms:"
+		puts "To #{buddy.screen_name}:Enter search terms:"
 		people[buddy] = 2
 		
+	elsif people[buddy] == 2	
+		element_array = []
+		element_array = msg_parse(message)
+		result = event_search(element_array)
+		
+		unless result == ""
+			buddy.send_im "#{result}"
+			sleep 0.5
+			buddy.send_im "Say menu to return to the menu, or to view more information about an event reply with the bolded event number."
+			people[buddy] = "2a"
+		else
+			buddy.send_im "No event found. Say menu to return to the menu, or enter a new search."
+		end
+		
+	elsif people[buddy] == "2a"
+		if(m =/^\d+$/.match(message))
+			query = $dbh.prepare("SELECT * FROM events WHERE e_id = #{message}")
+			query.execute()
+			row = query.fetch()
+		
+			buddy.send_im "Title: #{row[0]}\nLocation: #{row[1]}\nStart time: #{row[2]}\nEnd time: #{row[3]}\nDate: #{row[4]}Contact: #{row[5]}\nHost: #{row[6]}\nWebsite: #{row[7]}\n"
+			sleep 1
+			buddy.send_im "Description: #{row[8]}"
+			sleep 1
+			buddy.send_im "Say menu to return to the menu, or enter another event ID to view more details."
+		else
+			buddy.send_im "Event ID not recognized. Say menu to return to the menu, or try again."
+		end
+		
+	#elsif people[buddy] == 1 and (m =/1/.match(message))
+	#	buddy.send_im "Enter the date you wish to search for: (Month DD, YYYY)"
+	#	puts "To #{buddy.screen_name}:Enter the date you wish to search for: (Month DD, YYYY)"
+	#	people[buddy] = 2
+	#	
+	#elsif people[buddy] == 2
+	#	query = $dbh.prepare("SELECT e_id, title FROM events WHERE date = \'#{message}\'")
+	#	query.execute()
+	#	
+	#	eventlist = ""
+	#	while row = query.fetch() do
+	#		eventlist += "#{row[0]}. #{row[1]}\n"
+	#	end
+	#	buddy.send_im "#{eventlist}"
+	
+	#Adding Event
 	elsif people[buddy] == 1 and (m =/2/.match(message))
 		buddy.send_im "Add a new event.\nEnter the title: (max 255 characters)"
 		puts "Add a new event.\nEnter the title: (max 255 characters)"
@@ -135,11 +245,8 @@ client.on_im do |message,buddy|
 		
 	elsif people[buddy] == "3i" and (m =/y/.match(message))
 		events[buddy].Creator = buddy.screen_name
-		
-		#*****************
-		#CREATE EVENT HERE
-		#*****************
-		
+		query = $dbh.prepare("INSERT INTO events values (\'#{events[buddy].Title}\', \'#{events[buddy].Location}\', \'#{events[buddy].Start}\', \'#{events[buddy].End}\', \'#{events[buddy].Date}\', \'#{events[buddy].Host}\', \'#{events[buddy].Contact}\', \'#{events[buddy].Website}\', \'#{events[buddy].Description}\', \'#{events[buddy].Creator}\');")
+		query.execute()
 		buddy.send_im "Congratulations. Your event has been entered!\n1.Search Events.\n2.Create New Event.\nType \"menu\" at any time to see this menu again."
 		people[buddy] = 1
 	

@@ -63,8 +63,9 @@ events.each do |s|
   events_string = events_string + s + ' '
 end
 events_string.gsub!(/'/,"")
+events_string.gsub!(/\$/,"$ ")
 
-puts events_string
+#puts events_string
 
 events_array = []
 events_string[/<title>(.+?)<item>/] = ""# get rid of preliminary xml
