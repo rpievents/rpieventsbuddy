@@ -95,6 +95,7 @@ while events_string.match(/<item>(.+?)<\/item>/)
   stime.gsub!(/20\d\d /,"")
   etime = description[/- (.+?) [:A,P:]M/]
   etime.gsub!(/- /,"")
+  etime.gsub!(/\w(.+), /,"")
 
   #parse location
   location = description[/\wM (.+?) \wM (.+?)\./]
@@ -124,4 +125,3 @@ events_array.each do |s|
 #	query = dbh.prepare("INSERT INTO events values (\'#{s.Title}\', \'#{s.Location}\', \'#{s.Start}\', \'#{s.End}\', \'#{s.Date}\', \'#{s.Host}\', \'#{s.Contact}\', \'#{s.Website}\', \'#{s.Description}\', \'#{s.Creator}\');")
 #	query.execute()
 end
-
