@@ -1,0 +1,26 @@
+HOW TO PUSH TO GIT? By Rob Margolies- Dictated by Chris Brown and Eric Cunningham - 4/21/09
+
+
+
+
+1. Clone repository from the cloud
+	-Pull the current project from github
+	-Choose a folder where i want it to be
+	-Right click- git bash here
+	-'git clone [name of repository]'   **** [name of repository] = git@github.com:rpievents/rpieventsbuddy.git
+	
+2. Now that i have files, modify them- CODE
+3. When ready to push. . .
+	-right click on folder its in
+	-git bash here
+	-'git add .'    *** will add all changed files/ or new files to list for server
+	
+	-To see what files i have "staged" type 'git status' - shows me what i am ready to commit
+	-'git commit -m 'this is hwere my commit note goes'
+	-'git push origin master'
+		-if there are no errors, im done
+		-if there are fast forward errors-'no fastforward path'
+			- type 'git pull'
+			-it will tell me if there are merge conflicts- fix these
+			-type 'git push origin master'
+			
