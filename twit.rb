@@ -56,6 +56,7 @@ class Twitter
   end
 end
 
+while(true)
 #************************
 #* CONNECTS TO POSTGRES *
 #************************
@@ -68,6 +69,11 @@ t = Time.now
 y = (t.year).to_s
 y.gsub!(/20/, '')
 date = "#{t.month}/#{t.day}/#{y}"
+$conn.exec ("DELETE FROM Appended")
+	$conn.exec ("Insert Into Appended (title, location, start_time, end_time, date, contact, host, website, description, creator, been_twit)
+Select title, location, start_time, end_time, date, contact, host, website, description, creator, been_twit from UnionCalendar
+Union ALL
+Select title, location, start_time, end_time, date, contact, host, website, description, creator, been_twit from events")
 query = $conn.exec("SELECT * FROM events WHERE date ILIKE '#{date}' AND been_twit IS FALSE")
 response = []
 if (query != nil)
@@ -88,4 +94,5 @@ if (query != nil)
     twit.update('test')
   end
 end
-
+sleep(3600)
+end
